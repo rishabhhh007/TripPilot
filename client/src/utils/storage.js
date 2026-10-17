@@ -1,0 +1,74 @@
+// Demo-mode storage in the browser (localStorage).
+// When the backend exists, these functions get replaced by fetch() calls to the Express API
+// and trips are saved in MongoDB instead. The rest of the app can stay the same.
+
+function read(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function write(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Storage can be full or blocked; the app still works without it.
+  }
+}
+
+// ---- Saved trips (per user email) ----
+const tripsKey = (email) => `trippilot_trips_${email}`;
+
+export function getSavedTrips(email) {
+  return read(tripsKey(email), []);
+}
+
+export function saveTrip(email, itinerary) {
+  const trips = getSavedTrips(email).filter((t) => t.id !== itinerary.id);
+  trips.unshift({ ...itinerary, savedAt: new Date().toISOString() });
+  write(tripsKey(email), trips);
+}
+
+export function deleteTrip(email, tripId) {
+  write(tripsKey(email), getSavedTrips(email).filter((t) => t.id !== tripId));
+}
+
+// ---- Unsaved draft (survives going to the login page and back) ----
+export function loadDraft() {
+  try {
+    const raw = sessionStorage.getItem("trippilot_draft");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveDraft(itinerary) {
+  try {
+    if (itinerary) sessionStorage.setItem("trippilot_draft", JSON.stringify(itinerary));
+    else sessionStorage.removeItem("trippilot_draft");
+  } catch {
+    // ignore
+  }
+}
+
+// ---- Demo users (name + email only; passwords are NEVER stored) ----
+export function getUsers() {
+  return read("trippilot_users", []);
+}
+
+export function saveUsers(users) {
+  write("trippilot_users", users);
+}
+
+export function getSession() {
+  return read("trippilot_session", null);
+}
+
+export function saveSession(user) {
+  if (user) write("trippilot_session", user);
+  else localStorage.removeItem("trippilot_session");
+}
