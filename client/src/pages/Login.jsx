@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, LogIn } from "lucide-react";
+import { Mail, Lock, LogIn, Loader2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Login() {
@@ -9,17 +9,22 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setError("");
     if (!/^\S+@\S+\.\S+$/.test(email)) return setError("Enter a valid email address.");
-    if (password.length < 6) return setError("Password must be at least 6 characters.");
+    if (!password) return setError("Enter your password.");
+
+    setSubmitting(true);
     try {
-      login(email.trim().toLowerCase());
+      await login(email.trim().toLowerCase(), password);
       navigate("/");
     } catch (err) {
       setError(err.message);
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -40,21 +45,20 @@ export default function Login() {
           <label className="label">Password</label>
           <div className="relative">
             <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-navy-soft" />
-            <input type="password" className="input !pl-10" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" />
+            <input type="password" className="input !pl-10" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your password" />
           </div>
         </div>
 
         {error && <p className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
 
-        <button type="submit" className="btn-primary w-full !py-3"><LogIn size={16} /> Log in</button>
+        <button type="submit" className="btn-primary w-full !py-3" disabled={submitting}>
+          {submitting ? <Loader2 size={16} className="animate-spin" /> : <LogIn size={16} />}
+          {submitting ? "Logging in..." : "Log in"}
+        </button>
         <p className="text-center text-sm text-navy-soft">
           New to TripPilot? <Link to="/register" className="font-semibold text-emerald-700">Create an account</Link>
         </p>
       </form>
-
-      <p className="mt-4 text-xs text-navy-soft">
-        Demo mode: accounts are stored only in this browser and passwords are not saved or checked. Real login (bcrypt and JWT) comes with the backend.
-      </p>
     </div>
   );
 }

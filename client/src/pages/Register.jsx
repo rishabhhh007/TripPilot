@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, User, UserPlus } from "lucide-react";
+import { Mail, Lock, User, UserPlus, Loader2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Register() {
@@ -10,18 +10,23 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setError("");
     if (name.trim().length < 2) return setError("Enter your name.");
     if (!/^\S+@\S+\.\S+$/.test(email)) return setError("Enter a valid email address.");
-    if (password.length < 6) return setError("Password must be at least 6 characters.");
+    if (password.length < 8) return setError("Password must be at least 8 characters.");
+
+    setSubmitting(true);
     try {
-      register(name.trim(), email.trim().toLowerCase());
+      await register(name.trim(), email.trim().toLowerCase(), password);
       navigate("/");
     } catch (err) {
       setError(err.message);
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -49,21 +54,20 @@ export default function Register() {
           <label className="label">Password</label>
           <div className="relative">
             <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-navy-soft" />
-            <input type="password" className="input !pl-10" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" />
+            <input type="password" className="input !pl-10" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" />
           </div>
         </div>
 
         {error && <p className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
 
-        <button type="submit" className="btn-primary w-full !py-3"><UserPlus size={16} /> Create account</button>
+        <button type="submit" className="btn-primary w-full !py-3" disabled={submitting}>
+          {submitting ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}
+          {submitting ? "Creating account..." : "Create account"}
+        </button>
         <p className="text-center text-sm text-navy-soft">
           Already registered? <Link to="/login" className="font-semibold text-emerald-700">Log in</Link>
         </p>
       </form>
-
-      <p className="mt-4 text-xs text-navy-soft">
-        Demo mode: your account is stored only in this browser and your password is not saved. Real accounts come with the backend.
-      </p>
     </div>
   );
 }

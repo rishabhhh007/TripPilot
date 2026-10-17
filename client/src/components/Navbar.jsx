@@ -8,11 +8,9 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
-  function handleLogout() {
-    logout();
-    setOpen(false);
-    navigate("/");
-  }
+    async function handleLogout() {
+    await logout();
+    }
 
   const linkClass = "text-sm font-medium text-navy-soft transition hover:text-emerald-700";
 

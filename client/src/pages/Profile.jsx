@@ -12,6 +12,7 @@ export default function Profile() {
   const [name, setName] = useState(user.name);
   const [prefs, setPrefs] = useState({ ...DEFAULT_PREFERENCES, ...user.preferences });
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
   const [trips, setTrips] = useState(() => getSavedTrips(user.email));
 
   function setPref(field, value) {
@@ -24,17 +25,22 @@ export default function Profile() {
     setPref("interests", has ? prefs.interests.filter((i) => i !== interest) : [...prefs.interests, interest]);
   }
 
-  function handleSave(e) {
+    async function handleSave(e) {
     e.preventDefault();
-    updateProfile({
-      name: name.trim() || user.name,
-      preferences: {
-        ...prefs,
-        defaultBudget: Number(prefs.defaultBudget) || DEFAULT_PREFERENCES.defaultBudget,
-        defaultTravelers: Number(prefs.defaultTravelers) || DEFAULT_PREFERENCES.defaultTravelers,
-      },
-    });
-    setSaved(true);
+    setError("");
+    try {
+      await updateProfile({
+        name: name.trim() || user.name,
+        preferences: {
+          ...prefs,
+          defaultBudget: Number(prefs.defaultBudget) || DEFAULT_PREFERENCES.defaultBudget,
+          defaultTravelers: Number(prefs.defaultTravelers) || DEFAULT_PREFERENCES.defaultTravelers,
+        },
+      });
+      setSaved(true);
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
   function handleDelete(id) {
@@ -112,6 +118,7 @@ export default function Profile() {
           <div className="flex items-center gap-3">
             <button type="submit" className="btn-primary"><Save size={16} /> Save changes</button>
             {saved && <span className="flex items-center gap-1 text-sm text-emerald-700"><CheckCircle2 size={15} /> Saved</span>}
+            {error && <span className="text-sm text-rose-700">{error}</span>}
           </div>
         </form>
 

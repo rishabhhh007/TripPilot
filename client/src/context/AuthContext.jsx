@@ -1,10 +1,5 @@
-import { createContext, useContext, useState } from "react";
-import { getSession, saveSession, getUsers, saveUsers } from "../utils/storage.js";
-
-// DEMO AUTH (no server yet): accounts live only in this browser.
-// Passwords are NOT stored and NOT checked in demo mode.
-// In the backend phase, login/register/logout will call the Express API (bcrypt + JWT cookie)
-// and this file will be the only place that needs to change.
+import { createContext, useContext, useEffect, useState } from "react";
+import { api } from "../api/http.js";
 
 const AuthContext = createContext(null);
 
@@ -18,42 +13,41 @@ export const DEFAULT_PREFERENCES = {
 };
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => getSession());
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  function startSession(account) {
-    setUser(account);
-    saveSession(account);
+  useEffect(() => {
+    api("/auth/me")
+      .then((data) => setUser(data.user))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function register(name, email, password) {
+    const data = await api("/auth/register", { method: "POST", body: { name, email, password } });
+    setUser(data.user);
   }
 
-  function register(name, email) {
-    const users = getUsers();
-    if (users.some((u) => u.email === email)) {
-      throw new Error("An account with this email already exists.");
+  async function login(email, password) {
+    const data = await api("/auth/login", { method: "POST", body: { email, password } });
+    setUser(data.user);
+  }
+
+  async function logout() {
+    try {
+      await api("/auth/logout", { method: "POST" });
+    } finally {
+      setUser(null);
     }
-    const account = { name, email, preferences: DEFAULT_PREFERENCES };
-    saveUsers([...users, account]);
-    startSession(account);
   }
 
-  function login(email) {
-    const account = getUsers().find((u) => u.email === email);
-    if (!account) throw new Error("No account found for this email. Please register first.");
-    startSession(account);
-  }
-
-  function logout() {
-    setUser(null);
-    saveSession(null);
-  }
-
-  function updateProfile(changes) {
-    const updated = { ...user, ...changes };
-    saveUsers(getUsers().map((u) => (u.email === updated.email ? updated : u)));
-    startSession(updated);
+  async function updateProfile(changes) {
+    const data = await api("/auth/me", { method: "PATCH", body: changes });
+    setUser(data.user);
   }
 
   return (
-    <AuthContext.Provider value={{ user, register, login, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, loading, register, login, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

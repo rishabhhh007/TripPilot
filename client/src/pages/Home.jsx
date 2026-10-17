@@ -37,6 +37,16 @@ export default function Home() {
     saveDraft(itinerary);
   }, [itinerary]);
 
+    useEffect(() => {
+    if (user?.preferences) {
+      setForm((prev) => ({
+        ...prev,
+        travelers: user.preferences.defaultTravelers,
+        budget: user.preferences.defaultBudget,
+      }));
+    }
+  }, [user]);
+
   // Scroll to a section when the URL has a #hash (e.g. /#features).
   useEffect(() => {
     if (location.hash) {

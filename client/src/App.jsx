@@ -9,7 +9,8 @@ import { useAuth } from "./context/AuthContext.jsx";
 
 // Only logged-in users can open the profile page.
 function RequireAuth({ children }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  if (loading) return <p className="px-4 py-20 text-center text-navy-soft">Loading...</p>;
   if (!user) return <Navigate to="/login" replace />;
   return children;
 }
